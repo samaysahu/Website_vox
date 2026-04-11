@@ -14,9 +14,9 @@ function renderHeader() {
   const brandHref = joinPath(basePath, "index.html");
 
   return `
-    <a class="brand" href="${brandHref}" aria-label="Vox Website home">
-      <span class="brand-mark">VX</span>
-      <span class="brand-name">Vox Website</span>
+    <a class="brand" href="${brandHref}" aria-label="Robotechzone home">
+      <span class="brand-mark">RZ</span>
+      <span class="brand-name">Robotechzone</span>
     </a>
     ${
       pageType === "home"
@@ -29,10 +29,10 @@ function renderHeader() {
 function renderFooter() {
   return `
     <div>
-      <strong>Vox Website</strong>
+      <strong>Robotechzone</strong>
       <p class="contact-email">Email <a href="mailto:samay700@gmail.com">samay700@gmail.com</a></p>
     </div>
-    <p class="footer-copy">© 2026 Vox Website</p>
+    <p class="footer-copy">© 2026 Robotechzone</p>
   `;
 }
 
@@ -42,6 +42,76 @@ function renderSharedLayout() {
 
   if (header) header.innerHTML = renderHeader();
   if (footer) footer.innerHTML = renderFooter();
+}
+
+function initProductGalleries() {
+  document.querySelectorAll("[data-product-gallery]").forEach((gallery) => {
+    const slides = Array.from(gallery.querySelectorAll("[data-gallery-slide]"));
+    const prevButton = gallery.querySelector("[data-gallery-prev]");
+    const nextButton = gallery.querySelector("[data-gallery-next]");
+    const dots = gallery.querySelector("[data-gallery-dots]");
+
+    if (slides.length === 0) {
+      return;
+    }
+
+    if (slides.length <= 1) {
+      if (prevButton) prevButton.hidden = true;
+      if (nextButton) nextButton.hidden = true;
+      if (dots) dots.hidden = true;
+      slides[0].classList.add("is-active");
+      slides[0].setAttribute("aria-hidden", "false");
+      return;
+    }
+
+    let activeIndex = 0;
+
+    const renderState = () => {
+      slides.forEach((slide, index) => {
+        const isActive = index === activeIndex;
+        slide.classList.toggle("is-active", isActive);
+        slide.setAttribute("aria-hidden", isActive ? "false" : "true");
+      });
+
+      if (dots) {
+        Array.from(dots.children).forEach((dot, index) => {
+          dot.classList.toggle("is-active", index === activeIndex);
+          dot.setAttribute("aria-current", index === activeIndex ? "true" : "false");
+        });
+      }
+    };
+
+    const setActive = (index) => {
+      activeIndex = (index + slides.length) % slides.length;
+      renderState();
+    };
+
+    if (prevButton) {
+      prevButton.hidden = false;
+      prevButton.addEventListener("click", () => setActive(activeIndex - 1));
+    }
+
+    if (nextButton) {
+      nextButton.hidden = false;
+      nextButton.addEventListener("click", () => setActive(activeIndex + 1));
+    }
+
+    if (dots) {
+      dots.hidden = false;
+      dots.innerHTML = "";
+
+      slides.forEach((slide, index) => {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = "product-gallery__dot";
+        dot.setAttribute("aria-label", `Show image ${index + 1} of ${slides.length}`);
+        dot.addEventListener("click", () => setActive(index));
+        dots.appendChild(dot);
+      });
+    }
+
+    renderState();
+  });
 }
 
 function renderOrderModal() {
@@ -97,7 +167,7 @@ function openOrderModal(productName) {
 
   if (!modal || !orderForm) return;
 
-  const name = productName || orderForm.dataset.product || document.body.dataset.productName || "Vox";
+    const name = productName || orderForm.dataset.product || document.body.dataset.productName || "Robotechzone";
 
   if (productLabel) {
     productLabel.textContent = name;
@@ -161,10 +231,10 @@ function bindOrderModal() {
     const name = String(formData.get("name") || "").trim();
     const phone = String(formData.get("phone") || "").trim();
     const address = String(formData.get("address") || "").trim();
-    const productName = orderForm.dataset.product || document.body.dataset.productName || "Vox";
+    const productName = orderForm.dataset.product || document.body.dataset.productName || "Robotechzone";
 
     const message = [
-      "Hello Vox concierge,",
+      "Hello Robotechzone concierge,",
       `Product: ${productName}`,
       `Name: ${name}`,
       `Phone: ${phone}`,
@@ -178,6 +248,7 @@ function bindOrderModal() {
 
 function init() {
   renderSharedLayout();
+  initProductGalleries();
   renderOrderModal();
   bindOrderModal();
 }

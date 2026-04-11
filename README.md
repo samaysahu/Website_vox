@@ -1,11 +1,12 @@
-# Vox Website
+# Robotechzone
 
-Vox Website is a lightweight product showcase for the Vox lineup from Robotechzone. It presents the Vox Keychain and Vox Desktop Bot products, highlights the main features, and lets visitors start an order through WhatsApp.
+Robotechzone is a lightweight product showcase for the Vox lineup. It presents the Vox Keychain, Vox Desktop Bot products, and the Shadow Lamp collection, highlights the main features, and lets visitors start an order through WhatsApp.
 
 ## Features
 
 - Clean product landing page with card-based navigation
 - Dedicated product pages for each Vox model
+- Shadow Lamp pages with consistent image framing and slider support
 - Shared header, footer, and order modal rendered through plain JavaScript
 - Responsive layout for desktop and mobile
 - Product videos, images, and payment artwork organized in a predictable asset structure
@@ -19,6 +20,13 @@ project-root/
     images/
       payment/
         payment-methods.jpg
+      Spiderman shadow lamp.png
+      Roronoa shadow lamp.png
+      Roronoa shadow lamp1.webp
+      Luffy shadow lamp.png
+      Luffy shadow lamp2.webp
+      Dragon shadow lamp.webp
+      Dragon shadow lamp4.webp
       vox-keychain.png
       vox-desktop-bot-v1.png
       vox-desktop-bot-v2.png
@@ -36,6 +44,11 @@ project-root/
     desktop-bot-v1.html
     desktop-bot-v2.html
     desktop-bot-v3.html
+    spiderman-shadow-lamp.html
+    roronoa-shadow-lamp.html
+    luffy-shadow-lamp.html
+    dragon-shadow-lamp.html
+    goku-shadow-lamp.html
   index.html
   README.md
 ```
