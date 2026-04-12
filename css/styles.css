@@ -245,6 +245,12 @@ textarea {
   font-size: 0.88rem;
 }
 
+.product-card__price-save {
+  color: var(--success);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
 .product-card__price--quote .product-card__price-now {
   font-size: 1rem;
 }
