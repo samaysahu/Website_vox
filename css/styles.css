@@ -215,6 +215,40 @@ textarea {
   font-size: 1.15rem;
 }
 
+.product-card__price {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0.8rem 0.9rem;
+  border-radius: 18px;
+  background: rgba(244, 241, 234, 0.9);
+  border: 1px solid rgba(231, 223, 207, 0.9);
+}
+
+.product-card__price-label {
+  color: var(--accent-strong);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.product-card__price-now {
+  color: var(--brand);
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.product-card__price-mrp {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.product-card__price--quote .product-card__price-now {
+  font-size: 1rem;
+}
+
 .product-card__tagline {
   margin: 0;
   color: var(--muted);
@@ -784,6 +818,23 @@ textarea {
   .site-shell {
     width: min(100% - 1rem, 1120px);
     padding-top: 1rem;
+  }
+
+  .product-grid {
+    gap: 1rem;
+  }
+
+  .product-card {
+    gap: 0.75rem;
+    padding: 0.9rem;
+  }
+
+  .product-card__price {
+    padding: 0.72rem 0.8rem;
+  }
+
+  .product-card__price-now {
+    font-size: 1.12rem;
   }
 
   .product-panel,
