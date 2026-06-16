@@ -9,6 +9,25 @@ function joinPath(basePath, path) {
   return `${basePath}${path}`;
 }
 
+function normalizeCheckoutAssetPath(path) {
+  return String(path || "")
+    .replace(/^(\.\.\/)+/, "")
+    .replace(/^\/+/, "");
+}
+
+function buildCheckoutUrl(productData) {
+  const basePath = getBasePath();
+  const params = new URLSearchParams();
+
+  if (productData.name) params.set("product", productData.name);
+  if (productData.price) params.set("price", String(productData.price));
+  if (productData.image) params.set("image", normalizeCheckoutAssetPath(productData.image));
+  if (productData.mrp) params.set("mrp", String(productData.mrp));
+  if (productData.stock) params.set("stock", String(productData.stock));
+
+  return `${joinPath(basePath, "checkout.html")}?${params.toString()}`;
+}
+
 function getImageSource(image) {
   return image.currentSrc || image.src;
 }
@@ -339,6 +358,14 @@ function renderOrderModal() {
           Delivery address
           <textarea name="address" rows="2" placeholder="Full address" autocomplete="street-address" required></textarea>
         </label>
+        <label>
+          Payment method
+          <select name="payment" autocomplete="off" required>
+            <option value="" selected disabled>Select payment method</option>
+            <option value="COD">COD</option>
+            <option value="UPI">UPI</option>
+          </select>
+        </label>
         <button class="btn btn-primary" type="submit">Place order</button>
       </form>
     </div>
@@ -418,6 +445,7 @@ function bindOrderModal() {
     const name = String(formData.get("name") || "").trim();
     const phone = String(formData.get("phone") || "").trim();
     const address = String(formData.get("address") || "").trim();
+    const paymentMethod = String(formData.get("payment") || "").trim();
     const productName = orderForm.dataset.product || document.body.dataset.productName || "Robotechzone";
 
     const message = [
@@ -426,6 +454,7 @@ function bindOrderModal() {
       `Name: ${name}`,
       `Phone: ${phone}`,
       `Address: ${address}`,
+      `Payment method: ${paymentMethod}`,
     ].join("\n");
 
     window.open(createWhatsAppUrl(message), "_blank", "noopener,noreferrer");
@@ -433,12 +462,33 @@ function bindOrderModal() {
   });
 }
 
+function bindCheckoutButtons() {
+  document.querySelectorAll(".buy-now").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const productData = {
+        name: btn.dataset.checkoutName || btn.dataset.product || "Robotechzone",
+        price: btn.dataset.checkoutPrice || "",
+        image: btn.dataset.checkoutImage || "",
+        mrp: btn.dataset.checkoutMrp || "",
+        stock: btn.dataset.checkoutStock || "5",
+      };
+
+      localStorage.setItem("rz_checkout_product", productData.name);
+      localStorage.setItem("rz_checkout_price", productData.price);
+      localStorage.setItem("rz_checkout_image", normalizeCheckoutAssetPath(productData.image));
+      localStorage.setItem("rz_checkout_mrp", productData.mrp);
+      localStorage.setItem("rz_checkout_stock", productData.stock);
+
+      window.location.href = buildCheckoutUrl(productData);
+    });
+  });
+}
+
 function init() {
   renderSharedLayout();
   initProductGalleries();
   initImageZoom();
-  renderOrderModal();
-  bindOrderModal();
+  bindCheckoutButtons();
 }
 
 document.addEventListener("DOMContentLoaded", init);

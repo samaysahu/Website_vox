@@ -971,7 +971,8 @@ textarea {
 }
 
 .order-form input,
-.order-form textarea {
+.order-form textarea,
+.order-form select {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -982,7 +983,8 @@ textarea {
 }
 
 .order-form input:focus,
-.order-form textarea:focus {
+.order-form textarea:focus,
+.order-form select:focus {
   outline: none;
   border-color: rgba(199, 141, 46, 0.7);
   box-shadow: 0 0 0 4px rgba(199, 141, 46, 0.12);
