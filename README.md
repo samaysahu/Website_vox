@@ -1,11 +1,11 @@
 # Robotechzone
 
-Robotechzone is a lightweight product showcase for the Vox lineup. It presents the Vox Keychain, Vox Desktop Bot products, and the Shadow Lamp collection, highlights the main features, and lets visitors start an order through WhatsApp.
+Robotechzone is a lightweight product showcase for the Bunty lineup. It presents the Bunty Desktop companian and keychain, Bunty Desktop companian and keychain Classic, Bunty Desktop Bot products, and the Shadow Lamp collection, highlights the main features, and lets visitors start an order through WhatsApp.
 
 ## Features
 
 - Clean product landing page with card-based navigation
-- Dedicated product pages for each Vox model
+- Dedicated product pages for each Bunty model
 - Shadow Lamp pages with consistent image framing and slider support
 - Shared header, footer, and order modal rendered through plain JavaScript
 - Responsive layout for desktop and mobile
@@ -30,20 +30,18 @@ project-root/
       vox-keychain.png
       vox-desktop-bot-v1.png
       vox-desktop-bot-v2.png
-      vox-desktop-bot-v3.png
     videos/
       keychain.mp4
       desktop-bot-v1.mp4
-      desktop-bot-v3.mp4
   css/
     styles.css
   js/
     scripts.js
   pages/
     keychain.html
+    keychain-classic.html
     desktop-bot-v1.html
     desktop-bot-v2.html
-    desktop-bot-v3.html
     spiderman-shadow-lamp.html
     roronoa-shadow-lamp.html
     luffy-shadow-lamp.html

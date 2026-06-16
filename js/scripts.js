@@ -1,4 +1,5 @@
 const whatsappNumber = "918458839587";
+let imageLightboxState = null;
 
 function getBasePath() {
   return document.body?.dataset.basePath || "";
@@ -6,6 +7,152 @@ function getBasePath() {
 
 function joinPath(basePath, path) {
   return `${basePath}${path}`;
+}
+
+function getImageSource(image) {
+  return image.currentSrc || image.src;
+}
+
+function ensureImageLightbox() {
+  if (imageLightboxState?.modal) {
+    return imageLightboxState;
+  }
+
+  const modal = document.createElement("div");
+  modal.className = "image-lightbox";
+  modal.dataset.imageLightbox = "";
+  modal.setAttribute("aria-hidden", "true");
+  modal.innerHTML = `
+    <div class="image-lightbox__panel" role="dialog" aria-modal="true" aria-labelledby="image-lightbox-title">
+      <h2 class="visually-hidden" id="image-lightbox-title">Image preview</h2>
+      <button class="image-lightbox__close" type="button" data-lightbox-close aria-label="Close image preview">&times;</button>
+      <button class="image-lightbox__control image-lightbox__control--prev" type="button" data-lightbox-prev aria-label="Previous image">
+        <span aria-hidden="true">‹</span>
+      </button>
+      <figure class="image-lightbox__figure">
+        <img class="image-lightbox__image" data-lightbox-image alt="">
+        <figcaption class="image-lightbox__meta">
+          <span data-lightbox-caption></span>
+          <span data-lightbox-counter></span>
+        </figcaption>
+      </figure>
+      <button class="image-lightbox__control image-lightbox__control--next" type="button" data-lightbox-next aria-label="Next image">
+        <span aria-hidden="true">›</span>
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const image = modal.querySelector("[data-lightbox-image]");
+  const caption = modal.querySelector("[data-lightbox-caption]");
+  const counter = modal.querySelector("[data-lightbox-counter]");
+  const closeButtons = modal.querySelectorAll("[data-lightbox-close]");
+  const prevButton = modal.querySelector("[data-lightbox-prev]");
+  const nextButton = modal.querySelector("[data-lightbox-next]");
+
+  imageLightboxState = {
+    modal,
+    image,
+    caption,
+    counter,
+    prevButton,
+    nextButton,
+    images: [],
+    activeIndex: 0,
+  };
+
+  const closeLightbox = () => {
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("is-lightbox-open");
+  };
+
+  const stepLightbox = (delta) => {
+    if (imageLightboxState.images.length <= 1) {
+      return;
+    }
+
+    const nextIndex = (imageLightboxState.activeIndex + delta + imageLightboxState.images.length) % imageLightboxState.images.length;
+    imageLightboxState.activeIndex = nextIndex;
+    syncImageLightbox();
+  };
+
+  const syncImageLightbox = () => {
+    const { images, activeIndex } = imageLightboxState;
+    const current = images[activeIndex];
+
+    if (!current) {
+      return;
+    }
+
+    image.src = current.src;
+    image.alt = current.alt;
+    if (caption) {
+      caption.textContent = current.caption || "";
+    }
+    if (counter) {
+      counter.textContent = images.length > 1 ? `${activeIndex + 1} / ${images.length}` : "";
+    }
+    if (prevButton) {
+      prevButton.hidden = images.length <= 1;
+    }
+    if (nextButton) {
+      nextButton.hidden = images.length <= 1;
+    }
+  };
+
+  imageLightboxState.closeLightbox = closeLightbox;
+  imageLightboxState.stepLightbox = stepLightbox;
+  imageLightboxState.syncImageLightbox = syncImageLightbox;
+
+  closeButtons.forEach((button) => {
+    button.addEventListener("click", closeLightbox);
+  });
+
+  prevButton?.addEventListener("click", () => stepLightbox(-1));
+  nextButton?.addEventListener("click", () => stepLightbox(1));
+
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) {
+      closeLightbox();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (!imageLightboxState?.modal?.classList.contains("is-open")) {
+      return;
+    }
+
+    if (event.key === "Escape") {
+      closeLightbox();
+    }
+
+    if (event.key === "ArrowLeft") {
+      stepLightbox(-1);
+    }
+
+    if (event.key === "ArrowRight") {
+      stepLightbox(1);
+    }
+  });
+
+  return imageLightboxState;
+}
+
+function openImageLightbox(images, activeIndex = 0) {
+  const state = ensureImageLightbox();
+
+  if (!state || images.length === 0) {
+    return;
+  }
+
+  state.images = images;
+  state.activeIndex = Math.max(0, Math.min(activeIndex, images.length - 1));
+  state.syncImageLightbox();
+  state.modal.classList.add("is-open");
+  state.modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("is-lightbox-open");
 }
 
 function renderHeader() {
@@ -50,6 +197,14 @@ function initProductGalleries() {
     const prevButton = gallery.querySelector("[data-gallery-prev]");
     const nextButton = gallery.querySelector("[data-gallery-next]");
     const dots = gallery.querySelector("[data-gallery-dots]");
+    const images = slides
+      .map((slide) => slide.querySelector("img"))
+      .filter((image) => image && image.tagName === "IMG")
+      .map((image) => ({
+        src: getImageSource(image),
+        alt: image.alt || "",
+        caption: image.alt || "",
+      }));
 
     if (slides.length === 0) {
       return;
@@ -86,6 +241,12 @@ function initProductGalleries() {
       renderState();
     };
 
+    slides.forEach((slide) => {
+      slide.addEventListener("click", () => {
+        openImageLightbox(images, activeIndex);
+      });
+    });
+
     if (prevButton) {
       prevButton.hidden = false;
       prevButton.addEventListener("click", () => setActive(activeIndex - 1));
@@ -114,6 +275,33 @@ function initProductGalleries() {
   });
 }
 
+function initImageZoom() {
+  document.querySelectorAll(".product-visual img").forEach((image) => {
+    image.setAttribute("tabindex", "0");
+    image.setAttribute("role", "button");
+    image.setAttribute("aria-label", image.alt ? `Open ${image.alt}` : "Open image");
+    image.classList.add("is-zoomable");
+
+    const open = () => {
+      openImageLightbox([
+        {
+          src: getImageSource(image),
+          alt: image.alt || "",
+          caption: image.alt || "",
+        },
+      ]);
+    };
+
+    image.addEventListener("click", open);
+    image.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        open();
+      }
+    });
+  });
+}
+
 function renderOrderModal() {
   const productName = document.body?.dataset.productName;
 
@@ -137,7 +325,6 @@ function renderOrderModal() {
         <div class="payment-card" role="img" aria-label="Accepted payments: UPI, PhonePe, Paytm, Google Pay">
           <img src="${joinPath(getBasePath(), "assets/images/payment/payment-methods.jpg")}" alt="" loading="lazy" decoding="async">
         </div>
-        <p class="payment-note">No COD. Payment by UPI only.</p>
       </div>
       <form class="order-form" id="order-form" data-product="${productName}">
         <label>
@@ -249,6 +436,7 @@ function bindOrderModal() {
 function init() {
   renderSharedLayout();
   initProductGalleries();
+  initImageZoom();
   renderOrderModal();
   bindOrderModal();
 }
