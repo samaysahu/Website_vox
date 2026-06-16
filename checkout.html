@@ -585,6 +585,10 @@
       color: var(--text);
     }
 
+    .success-summary span {
+      color: var(--muted);
+    }
+
     .success-actions {
       display: flex;
       justify-content: center;
@@ -862,10 +866,13 @@
       <div class="success-summary">
         <div><strong>Product:</strong> <span id="success-product"></span></div>
         <div><strong>Name:</strong> <span id="success-name"></span></div>
+        <div><strong>Phone:</strong> <span id="success-phone"></span></div>
         <div><strong>Address:</strong> <span id="success-address"></span></div>
         <div><strong>Total:</strong> <span id="success-total"></span></div>
       </div>
       <div class="success-actions">
+        <button class="btn btn-secondary" id="copy-order" type="button">Copy Order Details</button>
+        <button class="btn btn-primary" id="email-manual" type="button" hidden>📧 Send Order by Email</button>
         <a class="btn btn-primary" href="index.html">Continue Shopping</a>
       </div>
     </div>
@@ -879,6 +886,8 @@
       mrp: "rz_checkout_mrp",
       stock: "rz_checkout_stock",
     };
+
+    const businessEmail = "samaysahu700@gmail.com";
 
     const promoRules = {
       SAVE10: { type: "percent", value: 10 },
@@ -928,9 +937,15 @@
       successOverlay: document.getElementById("success-overlay"),
       successProduct: document.getElementById("success-product"),
       successName: document.getElementById("success-name"),
+      successPhone: document.getElementById("success-phone"),
       successAddress: document.getElementById("success-address"),
       successTotal: document.getElementById("success-total"),
+      copyOrder: document.getElementById("copy-order"),
+      emailManual: document.getElementById("email-manual"),
     };
+
+    let lastOrderDetails = "";
+    let lastEmailUrl = "";
 
     function renderProduct() {
       elements.productName.textContent = checkout.product;
@@ -969,6 +984,151 @@
       return Math.max(0, subtotal() + deliveryCharge() - discountAmount());
     }
 
+    function selectedPaymentLabel() {
+      const radio = document.querySelector('input[name="paymentMethod"]:checked');
+      if (!radio) return "UPI";
+      switch (radio.value) {
+        case "cod":
+          return "COD";
+        case "upi":
+          return "UPI";
+        default:
+          return "UPI";
+      }
+    }
+
+    function selectedDeliveryLabel() {
+      return state.delivery === "express" ? "Express" : "Standard";
+    }
+
+    function formatOrderTime(date = new Date()) {
+      return date.toLocaleString("en-IN", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+    }
+
+    function buildOrderDetails() {
+      const formData = new FormData(elements.form);
+      const name = String(formData.get("fullName") || "").trim();
+      const email = String(formData.get("email") || "").trim();
+      const phone = String(formData.get("phone") || "").trim();
+      const house = String(formData.get("house") || "").trim();
+      const street = String(formData.get("street") || "").trim();
+      const landmark = String(formData.get("landmark") || "").trim();
+      const city = String(formData.get("city") || "").trim();
+      const stateName = String(formData.get("state") || "").trim();
+      const pin = String(formData.get("pin") || "").trim();
+      const addressLines = [house, street];
+      if (landmark) addressLines.push(`${landmark} (landmark)`);
+      addressLines.push(`${city}, ${stateName} - ${pin}`);
+      addressLines.push("Country: India");
+
+      const subtotalValue = subtotal();
+      const deliveryValue = deliveryCharge();
+      const discountValue = discountAmount();
+      const totalValue = totalAmount();
+      const orderTime = formatOrderTime();
+      const paymentMethod = selectedPaymentLabel();
+
+      const message = [
+        "🛒 *NEW ORDER RECEIVED!*",
+        "",
+        "👤 *Customer Details:*",
+        `• Name: ${name}`,
+        `• Phone: ${phone}`,
+        `• Email: ${email}`,
+        "",
+        "📦 *Delivery Address:*",
+        ...addressLines.map((line) => `• ${line}`),
+        "",
+        "🛍️ *Order Details:*",
+        `• Product: ${checkout.product}`,
+        `• Quantity: ${state.qty}`,
+        `• Price per unit: ₹${checkout.price}`,
+        `• Delivery: ${selectedDeliveryLabel()}`,
+        "",
+        "💰 *Price Breakdown:*",
+        `• Subtotal: ₹${subtotalValue}`,
+        `• Delivery Charges: ₹${deliveryValue}`,
+        `• Discount: ₹${discountValue}`,
+        `• *Total: ₹${totalValue}*`,
+        "",
+        `💳 *Payment Method:* ${paymentMethod}`,
+        "",
+        `⏰ *Order Time:* ${orderTime}`,
+      ].join("\n");
+
+      return {
+        name,
+        email,
+        phone,
+        address: addressLines.join(", "),
+        subtotalValue,
+        deliveryValue,
+        discountValue,
+        totalValue,
+        orderTime,
+        paymentMethod,
+        message,
+      };
+    }
+
+    function buildEmailSubject(productName) {
+      return productName;
+    }
+
+    function buildEmailBody(details) {
+      return [
+        "🛒 NEW ORDER RECEIVED!",
+        "",
+        `To: ${businessEmail}`,
+        "",
+        "👤 Customer Details:",
+        `Name: ${details.name}`,
+        `Phone: ${details.phone}`,
+        `Email: ${details.email}`,
+        "",
+        "📦 Delivery Address:",
+        details.address,
+        "",
+        "🛍️ Order Details:",
+        `Product: ${checkout.product}`,
+        `Quantity: ${state.qty}`,
+        `Price per unit: ₹${checkout.price}`,
+        `Delivery: ${selectedDeliveryLabel()}`,
+        "",
+        "💰 Price Breakdown:",
+        `Subtotal: ₹${details.subtotalValue}`,
+        `Delivery Charges: ₹${details.deliveryValue}`,
+        `Discount: ₹${details.discountValue}`,
+        `Total: ₹${details.totalValue}`,
+        "",
+        `💳 Payment Method: ${details.paymentMethod}`,
+        "",
+        `⏰ Order Time: ${details.orderTime}`,
+      ].join("\n");
+    }
+
+    function buildMailtoUrl(details) {
+      const params = new URLSearchParams();
+      params.set("subject", buildEmailSubject(checkout.product));
+      params.set("body", buildEmailBody(details));
+      return `mailto:${businessEmail}?${params.toString()}`;
+    }
+
+    function openEmailOrder(details) {
+      lastEmailUrl = buildMailtoUrl(details);
+      const popup = window.open(lastEmailUrl, "_self");
+      if (!popup) {
+        elements.emailManual.hidden = false;
+        elements.emailManual.onclick = () => window.location.assign(lastEmailUrl);
+        return false;
+      }
+      elements.emailManual.hidden = true;
+      return true;
+    }
+
     function renderTotals() {
       const sub = subtotal();
       const delivery = deliveryCharge();
@@ -981,7 +1141,7 @@
       elements.breakdownDelivery.textContent = delivery === 0 ? "Free" : currency(delivery);
       elements.breakdownDiscount.textContent = discount > 0 ? `- ${currency(discount)}` : currency(0);
       elements.totalAmount.textContent = currency(total);
-      elements.breakdownDiscount.style.color = discount > 0 ? "#18c964" : "rgba(245, 245, 245, 0.72)";
+      elements.breakdownDiscount.style.color = discount > 0 ? "#18c964" : "var(--muted)";
     }
 
     function setPromoMessage(type, text) {
@@ -1043,16 +1203,18 @@
     }
 
     function showSuccessPopup() {
-      const formData = new FormData(elements.form);
-      const total = totalAmount();
+      const details = buildOrderDetails();
 
       elements.successProduct.textContent = checkout.product;
-      elements.successName.textContent = String(formData.get("fullName") || "");
-      elements.successAddress.textContent = getAddress();
-      elements.successTotal.textContent = currency(total);
+      elements.successName.textContent = details.name;
+      elements.successPhone.textContent = details.phone;
+      elements.successAddress.textContent = details.address;
+      elements.successTotal.textContent = currency(details.totalValue);
+      lastOrderDetails = details.message;
       elements.successOverlay.classList.add("is-open");
       elements.successOverlay.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
+      openEmailOrder(details);
     }
 
     function validateVisiblePaymentFields() {
@@ -1121,6 +1283,27 @@
           elements.successOverlay.classList.remove("is-open");
           elements.successOverlay.setAttribute("aria-hidden", "true");
           document.body.style.overflow = "";
+        }
+      });
+
+      elements.copyOrder.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(lastOrderDetails || buildOrderDetails().message);
+          elements.copyOrder.textContent = "Copied!";
+          setTimeout(() => {
+            elements.copyOrder.textContent = "Copy Order Details";
+          }, 1600);
+        } catch (error) {
+          elements.copyOrder.textContent = "Copy failed";
+          setTimeout(() => {
+            elements.copyOrder.textContent = "Copy Order Details";
+          }, 1600);
+        }
+      });
+
+      elements.emailManual.addEventListener("click", () => {
+        if (lastEmailUrl) {
+          window.location.assign(lastEmailUrl);
         }
       });
     }
