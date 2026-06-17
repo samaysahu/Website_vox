@@ -193,12 +193,18 @@ function renderHeader() {
 }
 
 function renderFooter() {
+  const basePath = getBasePath();
+  const adminHref = joinPath(basePath, "admin-login.html");
+
   return `
     <div>
       <strong>Robotechzone</strong>
       <p class="contact-email">Email <a href="mailto:samay700@gmail.com">samay700@gmail.com</a></p>
     </div>
-    <p class="footer-copy">© 2026 Robotechzone</p>
+    <div class="footer-meta">
+      <p class="footer-copy">© 2026 Robotechzone</p>
+      <a class="footer-admin" href="${adminHref}">Admin</a>
+    </div>
   `;
 }
 

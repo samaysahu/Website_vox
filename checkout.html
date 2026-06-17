@@ -861,8 +861,8 @@
   <div class="success-overlay" id="success-overlay" aria-hidden="true">
     <div class="success-card" role="dialog" aria-modal="true" aria-labelledby="success-title">
       <div class="checkmark" aria-hidden="true">✓</div>
-      <h2 id="success-title">Order Placed Successfully!</h2>
-      <p>Your order is confirmed. Here is your summary:</p>
+      <h2 id="success-title">We will contact you shortly</h2>
+      <p>Your order has been received. Here is your summary:</p>
       <div class="success-summary">
         <div><strong>Product:</strong> <span id="success-product"></span></div>
         <div><strong>Name:</strong> <span id="success-name"></span></div>
@@ -872,7 +872,6 @@
       </div>
       <div class="success-actions">
         <button class="btn btn-secondary" id="copy-order" type="button">Copy Order Details</button>
-        <button class="btn btn-primary" id="email-manual" type="button" hidden>📧 Send Order by Email</button>
         <a class="btn btn-primary" href="index.html">Continue Shopping</a>
       </div>
     </div>
@@ -885,9 +884,8 @@
       image: "rz_checkout_image",
       mrp: "rz_checkout_mrp",
       stock: "rz_checkout_stock",
+      orders: "vox_orders",
     };
-
-    const businessEmail = "samaysahu700@gmail.com";
 
     const promoRules = {
       SAVE10: { type: "percent", value: 10 },
@@ -941,11 +939,46 @@
       successAddress: document.getElementById("success-address"),
       successTotal: document.getElementById("success-total"),
       copyOrder: document.getElementById("copy-order"),
-      emailManual: document.getElementById("email-manual"),
     };
 
     let lastOrderDetails = "";
-    let lastEmailUrl = "";
+
+    function getStoredOrders() {
+      try {
+        const raw = localStorage.getItem(storageKeys.orders);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        console.error("Could not read stored orders:", error);
+        return [];
+      }
+    }
+
+    function saveStoredOrders(orders) {
+      localStorage.setItem(storageKeys.orders, JSON.stringify(orders));
+    }
+
+    function nextOrderId(orders) {
+      const maxOrderNumber = orders.reduce((max, order) => {
+        const match = String(order.orderId || "").match(/VOX(\d+)/i);
+        const value = match ? Number(match[1]) : 0;
+        return Number.isFinite(value) && value > max ? value : max;
+      }, 0);
+
+      return `VOX${String(maxOrderNumber + 1).padStart(3, "0")}`;
+    }
+
+    function buildAddressObject(formData) {
+      return {
+        house: String(formData.get("house") || "").trim(),
+        street: String(formData.get("street") || "").trim(),
+        landmark: String(formData.get("landmark") || "").trim(),
+        city: String(formData.get("city") || "").trim(),
+        state: String(formData.get("state") || "").trim(),
+        pin: String(formData.get("pin") || "").trim(),
+        country: "India",
+      };
+    }
 
     function renderProduct() {
       elements.productName.textContent = checkout.product;
@@ -1013,16 +1046,11 @@
       const name = String(formData.get("fullName") || "").trim();
       const email = String(formData.get("email") || "").trim();
       const phone = String(formData.get("phone") || "").trim();
-      const house = String(formData.get("house") || "").trim();
-      const street = String(formData.get("street") || "").trim();
-      const landmark = String(formData.get("landmark") || "").trim();
-      const city = String(formData.get("city") || "").trim();
-      const stateName = String(formData.get("state") || "").trim();
-      const pin = String(formData.get("pin") || "").trim();
-      const addressLines = [house, street];
-      if (landmark) addressLines.push(`${landmark} (landmark)`);
-      addressLines.push(`${city}, ${stateName} - ${pin}`);
-      addressLines.push("Country: India");
+      const address = buildAddressObject(formData);
+      const addressLines = [address.house, address.street];
+      if (address.landmark) addressLines.push(`${address.landmark} (landmark)`);
+      addressLines.push(`${address.city}, ${address.state} - ${address.pin}`);
+      addressLines.push(`Country: ${address.country}`);
 
       const subtotalValue = subtotal();
       const deliveryValue = deliveryCharge();
@@ -1030,9 +1058,11 @@
       const totalValue = totalAmount();
       const orderTime = formatOrderTime();
       const paymentMethod = selectedPaymentLabel();
+      const deliveryType = selectedDeliveryLabel();
+      const orderId = nextOrderId(getStoredOrders());
 
       const message = [
-        "🛒 *NEW ORDER RECEIVED!*",
+        "🛒 *New Order Received!*",
         "",
         "👤 *Customer Details:*",
         `• Name: ${name}`,
@@ -1046,7 +1076,7 @@
         `• Product: ${checkout.product}`,
         `• Quantity: ${state.qty}`,
         `• Price per unit: ₹${checkout.price}`,
-        `• Delivery: ${selectedDeliveryLabel()}`,
+        `• Delivery: ${deliveryType}`,
         "",
         "💰 *Price Breakdown:*",
         `• Subtotal: ₹${subtotalValue}`,
@@ -1060,73 +1090,65 @@
       ].join("\n");
 
       return {
+        orderId,
+        createdAt: new Date().toISOString(),
         name,
         email,
         phone,
-        address: addressLines.join(", "),
+        addressObject: address,
+        house: address.house,
+        street: address.street,
+        landmark: address.landmark,
+        city: address.city,
+        state: address.state,
+        pin: address.pin,
+        addressText: addressLines.join(", "),
+        productName: checkout.product,
+        quantity: state.qty,
+        pricePerUnit: checkout.price,
         subtotalValue,
         deliveryValue,
         discountValue,
         totalValue,
         orderTime,
         paymentMethod,
+        deliveryType,
         message,
       };
     }
 
-    function buildEmailSubject(productName) {
-      return productName;
-    }
-
-    function buildEmailBody(details) {
-      return [
-        "🛒 NEW ORDER RECEIVED!",
-        "",
-        `To: ${businessEmail}`,
-        "",
-        "👤 Customer Details:",
-        `Name: ${details.name}`,
-        `Phone: ${details.phone}`,
-        `Email: ${details.email}`,
-        "",
-        "📦 Delivery Address:",
-        details.address,
-        "",
-        "🛍️ Order Details:",
-        `Product: ${checkout.product}`,
-        `Quantity: ${state.qty}`,
-        `Price per unit: ₹${checkout.price}`,
-        `Delivery: ${selectedDeliveryLabel()}`,
-        "",
-        "💰 Price Breakdown:",
-        `Subtotal: ₹${details.subtotalValue}`,
-        `Delivery Charges: ₹${details.deliveryValue}`,
-        `Discount: ₹${details.discountValue}`,
-        `Total: ₹${details.totalValue}`,
-        "",
-        `💳 Payment Method: ${details.paymentMethod}`,
-        "",
-        `⏰ Order Time: ${details.orderTime}`,
-      ].join("\n");
-    }
-
-    function buildMailtoUrl(details) {
-      const params = new URLSearchParams();
-      params.set("subject", buildEmailSubject(checkout.product));
-      params.set("body", buildEmailBody(details));
-      return `mailto:${businessEmail}?${params.toString()}`;
-    }
-
-    function openEmailOrder(details) {
-      lastEmailUrl = buildMailtoUrl(details);
-      const popup = window.open(lastEmailUrl, "_self");
-      if (!popup) {
-        elements.emailManual.hidden = false;
-        elements.emailManual.onclick = () => window.location.assign(lastEmailUrl);
-        return false;
-      }
-      elements.emailManual.hidden = true;
-      return true;
+    function persistOrder(details) {
+      const orders = getStoredOrders();
+      orders.unshift({
+        id: details.orderId,
+        orderId: details.orderId,
+        createdAt: details.createdAt,
+        orderTime: details.orderTime,
+        customerName: details.name,
+        email: details.email,
+        phone: details.phone,
+        address: details.addressText,
+        addressParts: details.addressObject,
+        street: details.street,
+        landmark: details.landmark,
+        city: details.city,
+        state: details.state,
+        pin: details.pin,
+        country: "India",
+        productName: details.productName,
+        quantity: details.quantity,
+        pricePerUnit: details.pricePerUnit,
+        subtotal: details.subtotalValue,
+        deliveryCharges: details.deliveryValue,
+        discount: details.discountValue,
+        totalAmount: details.totalValue,
+        paymentMethod: details.paymentMethod,
+        deliveryType: details.deliveryType,
+        status: "Pending",
+        promoCode: state.promoCode || "",
+        notes: details.message,
+      });
+      saveStoredOrders(orders);
     }
 
     function renderTotals() {
@@ -1202,19 +1224,16 @@
       return parts.join(", ");
     }
 
-    function showSuccessPopup() {
-      const details = buildOrderDetails();
-
+    function showSuccessPopup(details) {
       elements.successProduct.textContent = checkout.product;
       elements.successName.textContent = details.name;
       elements.successPhone.textContent = details.phone;
-      elements.successAddress.textContent = details.address;
+      elements.successAddress.textContent = details.addressText;
       elements.successTotal.textContent = currency(details.totalValue);
       lastOrderDetails = details.message;
       elements.successOverlay.classList.add("is-open");
       elements.successOverlay.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
-      openEmailOrder(details);
     }
 
     function validateVisiblePaymentFields() {
@@ -1275,7 +1294,9 @@
         if (!elements.form.reportValidity()) return;
         if (!validateVisiblePaymentFields()) return;
 
-        showSuccessPopup();
+        const details = buildOrderDetails();
+        persistOrder(details);
+        showSuccessPopup(details);
       });
 
       elements.successOverlay.addEventListener("click", (event) => {
@@ -1298,12 +1319,6 @@
           setTimeout(() => {
             elements.copyOrder.textContent = "Copy Order Details";
           }, 1600);
-        }
-      });
-
-      elements.emailManual.addEventListener("click", () => {
-        if (lastEmailUrl) {
-          window.location.assign(lastEmailUrl);
         }
       });
     }
