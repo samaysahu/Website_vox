@@ -193,9 +193,6 @@ function renderHeader() {
 }
 
 function renderFooter() {
-  const basePath = getBasePath();
-  const adminHref = joinPath(basePath, "admin-login.html");
-
   return `
     <div>
       <strong>Robotechzone</strong>
@@ -203,7 +200,6 @@ function renderFooter() {
     </div>
     <div class="footer-meta">
       <p class="footer-copy">© 2026 Robotechzone</p>
-      <a class="footer-admin" href="${adminHref}">Admin</a>
     </div>
   `;
 }
