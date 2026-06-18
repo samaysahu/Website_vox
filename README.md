@@ -10,7 +10,8 @@ Robotechzone is a lightweight product showcase for the Bunty lineup. It presents
 - Shared header, footer, and order modal rendered through plain JavaScript
 - Responsive layout for desktop and mobile
 - Product videos, images, and payment artwork organized in a predictable asset structure
-- No framework or backend required
+- No framework required for the UI
+- Optional shared order API for cross-device admin syncing
 
 ## Folder Structure
 
@@ -57,12 +58,23 @@ project-root/
 2. Click any product card to open the relevant product page.
 3. Use the `Buy now` button on a product page to open the WhatsApp order flow.
 
+## Cross-Device Orders
+
+The admin dashboard currently uses browser storage by default, which only works on the same device/browser.
+To make orders appear across devices, set `window.VOX_ORDER_STORE_URL` to a shared REST endpoint that supports:
+
+- `GET` to return the current order list
+- `POST` to add a new order
+- `PUT` to replace the full order list after admin edits
+
+The pages will fall back to localStorage if the remote endpoint is unavailable.
+
 No build step is required.
 
 ## Future Improvements
 
 - Add real ecommerce checkout integration
-- Replace the WhatsApp-only flow with a proper order API
+- Replace the WhatsApp-only flow with a proper order API and hosted order database
 - Add a shared component build step if the site grows larger
 - Add a media pipeline for generating optimized image and video variants
 - Include analytics and conversion tracking

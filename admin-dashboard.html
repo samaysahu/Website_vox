@@ -582,6 +582,7 @@
     const SESSION_KEY = "vox_admin_session";
     const SESSION_MS = 30 * 60 * 1000;
     const ORDERS_KEY = "vox_orders";
+    const ORDER_STORE_URL = (window.VOX_ORDER_STORE_URL || localStorage.getItem("vox_order_store_url") || "").replace(/\/$/, "");
     const whatsappBase = "https://wa.me/91";
 
     const statTotal = document.getElementById("stat-total");
@@ -633,7 +634,7 @@
       return true;
     }
 
-    function getOrders() {
+    function getLocalOrders() {
       try {
         const raw = localStorage.getItem(ORDERS_KEY);
         const parsed = raw ? JSON.parse(raw) : [];
@@ -644,9 +645,73 @@
       }
     }
 
+    function orderStoreUrl() {
+      return ORDER_STORE_URL;
+    }
+
+    async function loadOrdersFromRemote() {
+      if (!ORDER_STORE_URL) return null;
+
+      const response = await fetch(orderStoreUrl(), {
+        method: "GET",
+        headers: {
+          "Accept": "application/json",
+        },
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Order store responded with ${response.status}`);
+      }
+
+      const payload = await response.json();
+      if (Array.isArray(payload)) return payload;
+      if (Array.isArray(payload.orders)) return payload.orders;
+      return [];
+    }
+
+    async function syncOrdersToRemote(nextOrders) {
+      if (!ORDER_STORE_URL) return true;
+
+      const response = await fetch(orderStoreUrl(), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(nextOrders),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Order store responded with ${response.status}`);
+      }
+
+      return true;
+    }
+
+    async function loadOrders() {
+      if (ORDER_STORE_URL) {
+        try {
+          const remoteOrders = await loadOrdersFromRemote();
+          if (Array.isArray(remoteOrders)) {
+            localStorage.setItem(ORDERS_KEY, JSON.stringify(remoteOrders));
+            return remoteOrders;
+          }
+        } catch (error) {
+          console.warn("Remote order store is unavailable. Falling back to local cache.", error);
+        }
+      }
+
+      return getLocalOrders();
+    }
+
     function saveOrders(nextOrders) {
       orders = nextOrders;
       localStorage.setItem(ORDERS_KEY, JSON.stringify(nextOrders));
+      if (ORDER_STORE_URL) {
+        syncOrdersToRemote(nextOrders).catch((error) => {
+          console.warn("Could not sync orders to the remote store.", error);
+        });
+      }
       render();
     }
 
@@ -798,7 +863,6 @@
     }
 
     function render() {
-      orders = getOrders().map(normalizeOrder);
       computeStats();
       renderTable();
       if (activeOrderId) {
@@ -955,7 +1019,27 @@
     }
 
     requireAuth();
-    render();
+    (async () => {
+      orders = (await loadOrders()).map(normalizeOrder);
+      render();
+    })().catch((error) => {
+      console.error("Failed to initialize orders:", error);
+      orders = getLocalOrders().map(normalizeOrder);
+      render();
+    });
+
+    if (ORDER_STORE_URL) {
+      setInterval(() => {
+        loadOrders()
+          .then((nextOrders) => {
+            orders = nextOrders.map(normalizeOrder);
+            render();
+          })
+          .catch((error) => {
+            console.warn("Remote refresh failed.", error);
+          });
+      }, 15000);
+    }
 
     searchInput.addEventListener("input", renderTable);
     statusFilter.addEventListener("change", renderTable);

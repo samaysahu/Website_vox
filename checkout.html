@@ -886,6 +886,7 @@
       stock: "rz_checkout_stock",
       orders: "vox_orders",
     };
+    const ORDER_STORE_URL = (window.VOX_ORDER_STORE_URL || localStorage.getItem("vox_order_store_url") || "").replace(/\/$/, "");
 
     const promoRules = {
       SAVE10: { type: "percent", value: 10 },
@@ -1117,7 +1118,7 @@
       };
     }
 
-    function persistOrder(details) {
+    function persistOrderLocally(details) {
       const orders = getStoredOrders();
       orders.unshift({
         id: details.orderId,
@@ -1149,6 +1150,37 @@
         notes: details.message,
       });
       saveStoredOrders(orders);
+    }
+
+    function orderStoreUrl() {
+      return ORDER_STORE_URL;
+    }
+
+    async function persistOrder(details) {
+      persistOrderLocally(details);
+
+      if (!ORDER_STORE_URL) {
+        return true;
+      }
+
+      try {
+        const response = await fetch(orderStoreUrl(), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(details),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Order store responded with ${response.status}`);
+        }
+
+        return true;
+      } catch (error) {
+        console.warn("Remote order store is unavailable. Saved locally instead.", error);
+        return false;
+      }
     }
 
     function renderTotals() {
@@ -1288,14 +1320,14 @@
         renderTotals();
       });
 
-      elements.form.addEventListener("submit", (event) => {
+      elements.form.addEventListener("submit", async (event) => {
         event.preventDefault();
 
         if (!elements.form.reportValidity()) return;
         if (!validateVisiblePaymentFields()) return;
 
         const details = buildOrderDetails();
-        persistOrder(details);
+        await persistOrder(details);
         showSuccessPopup(details);
       });
 
