@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A simple 4-step checkout for Robotechzone with progress tracking, delivery choices, payment selection, promo codes, and a friendly order summary.">
+  <meta name="description" content="A simple 4-step checkout for Robotechzone with progress tracking, delivery choices, payment selection, code entry, and a friendly order summary.">
   <meta name="theme-color" content="#f4f1ea">
   <title>Checkout | Robotechzone</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1134,12 +1134,12 @@
               </div>
 
               <div class="field field--full">
-                <label for="promo-code">Promo code</label>
+                <label for="promo-code">Code</label>
                 <div class="promo-row">
-                  <input id="promo-code" class="input" type="text" placeholder="Enter promo code" autocomplete="off">
+                  <input id="promo-code" name="code" class="input" type="text" placeholder="Enter code" autocomplete="off">
                   <button class="btn btn-secondary" id="promo-apply" type="button">Apply</button>
                 </div>
-                <p class="hint">Try <strong>SAVE10</strong> or <strong>BUNTY100</strong>.</p>
+                <p class="hint">Enter a code if you have one. We’ll include it in your WhatsApp order message.</p>
                 <p id="promo-message" class="message" aria-live="polite"></p>
               </div>
 
@@ -1313,6 +1313,7 @@
       delivery: "standard",
       paymentMethod: "upi",
       promoCode: "",
+      codeText: "",
       promoDiscount: 0,
       lastOrderMessage: "",
       lastWhatsappUrl: "",
@@ -1412,6 +1413,7 @@
     function getFormValues() {
       const data = new FormData(elements.form);
       return {
+        code: String(data.get("code") || "").trim(),
         fullName: String(data.get("fullName") || "").trim(),
         email: String(data.get("email") || "").trim(),
         phone: String(data.get("phone") || "").trim(),
@@ -1471,12 +1473,14 @@
       const addressLines = formatAddress(values);
       const delivery = deliveryOptions[state.delivery];
       const total = totalAmount();
+      const codeText = values.code || state.codeText || "";
 
       const message = [
         "Hello, I want to place an order.",
         "",
         `Product: ${checkout.product}`,
         `Qty: ${state.qty}`,
+        `Code: ${codeText || "No code entered"}`,
         `Name: ${values.fullName}`,
         `Phone: ${values.phone}`,
         `Email: ${values.email}`,
@@ -1540,6 +1544,7 @@
 
       elements.shippingSummary.textContent = [
         `${delivery.label} · ${delivery.eta}`,
+        `Code: ${values.code || "No code entered"}`,
         `Payment: ${formatPaymentSummary(values)}`,
         values.saveAddress ? "This address will be saved on this device." : "Address will not be saved.",
       ].join("\n");
@@ -1727,12 +1732,14 @@
     }
 
     function applyPromo() {
-      const code = elements.promoCode.value.trim().toUpperCase();
+      const rawCode = elements.promoCode.value.trim();
+      const code = rawCode.toUpperCase();
+      state.codeText = rawCode;
 
       if (!code) {
         state.promoCode = "";
         state.promoDiscount = 0;
-        setPromoMessage("error", "Please enter a promo code first.");
+        setPromoMessage("error", "Please enter a code first.");
         renderTotals();
         renderSummary();
         return;
@@ -1741,7 +1748,7 @@
       if (!promoRules[code]) {
         state.promoCode = "";
         state.promoDiscount = 0;
-        setPromoMessage("error", "That promo code isn’t valid for this order.");
+        setPromoMessage("error", "That code isn’t valid for a discount, but it will still be sent in WhatsApp.");
         renderTotals();
         renderSummary();
         return;
