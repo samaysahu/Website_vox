@@ -56,7 +56,7 @@ project-root/
 
 1. Open `index.html` directly in your browser.
 2. Click any product card to open the relevant product page.
-3. Use the `Pre-Order` button on a product page to open the WhatsApp order flow.
+3. Use the `Order Now` button on a product page to open the WhatsApp order flow.
 
 No build step is required.
 

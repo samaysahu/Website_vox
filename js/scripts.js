@@ -341,7 +341,7 @@ function renderOrderModal() {
       <h3 class="order-modal__title" id="order-title">
         <span class="order-product-name">${productName}</span>
       </h3>
-      <p class="order-modal__note">Opens WhatsApp with your pre-order details.</p>
+      <p class="order-modal__note">Opens WhatsApp with your order details.</p>
       <div class="payment-block">
         <div class="payment-card" role="img" aria-label="Accepted payments: UPI, PhonePe, Paytm, Google Pay">
           <img src="${joinPath(getBasePath(), "assets/images/payment/payment-methods.jpg")}" alt="" loading="lazy" decoding="async">
@@ -368,7 +368,7 @@ function renderOrderModal() {
             <option value="UPI">UPI</option>
           </select>
         </label>
-        <button class="btn btn-primary" type="submit">Place Pre-Order</button>
+        <button class="btn btn-primary" type="submit">Place Order</button>
       </form>
     </div>
   `;

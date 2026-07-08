@@ -1087,14 +1087,14 @@
                       <span class="option-title">Standard delivery</span>
                       <input type="radio" name="delivery" value="standard" checked>
                     </div>
-                    <span class="option-meta">Free · Arrives in 5-7 business days</span>
+                    <span class="option-meta">₹100 · Arrives in 5-7 business days</span>
                   </label>
                   <label class="option-card">
                     <div class="option-row">
-                      <span class="option-title">Express delivery</span>
-                      <input type="radio" name="delivery" value="express">
+                      <span class="option-title">Premium delivery</span>
+                      <input type="radio" name="delivery" value="premium">
                     </div>
-                    <span class="option-meta">₹99 · Arrives in 2-3 business days</span>
+                    <span class="option-meta">₹200 · Arrives in 2-3 business days</span>
                   </label>
                 </div>
               </div>
@@ -1230,8 +1230,8 @@
 
               <div class="step-actions">
                 <button class="btn btn-secondary btn-wide" type="button" data-prev-step="3">Back</button>
-                <button class="btn btn-primary btn-wide" id="place-order" type="submit">Place Pre-Order over the WhatsApp</button>
-                <p class="hint" style="margin:0; width:100%; text-align:right;">We’ll open WhatsApp with your pre-order details. Just send the message to confirm your order.</p>
+                <button class="btn btn-primary btn-wide" id="place-order" type="submit">Place Order on WhatsApp</button>
+                <p class="hint" style="margin:0; width:100%; text-align:right;">We’ll open WhatsApp with your order details. Just send the message to confirm your order.</p>
               </div>
             </section>
           </form>
@@ -1247,8 +1247,8 @@
   <div class="success-overlay" id="success-overlay" aria-hidden="true">
     <div class="success-card" role="dialog" aria-modal="true" aria-labelledby="success-title">
       <div class="checkmark" aria-hidden="true">✓</div>
-      <h2 id="success-title">Your pre-order is ready</h2>
-      <p>We’ve prepared a WhatsApp message with your pre-order details. Open it and send the message to confirm your order.</p>
+      <h2 id="success-title">Your order is ready</h2>
+      <p>We’ve prepared a WhatsApp message with your order details. Open it and send the message to confirm your order.</p>
       <div class="success-summary">
         <div><strong>Product:</strong> <span id="success-product"></span></div>
         <div><strong>Name:</strong> <span id="success-name"></span></div>
@@ -1257,7 +1257,7 @@
         <div><strong>Total:</strong> <span id="success-total"></span></div>
       </div>
       <div class="success-actions">
-        <button class="btn btn-primary" id="open-whatsapp" type="button">Send Pre-Order on WhatsApp</button>
+        <button class="btn btn-primary" id="open-whatsapp" type="button">Send Order on WhatsApp</button>
         <button class="btn btn-secondary" id="copy-order" type="button">Copy Order Details</button>
         <a class="btn btn-secondary" href="index.html">Continue Shopping</a>
       </div>
@@ -1282,8 +1282,8 @@
     };
 
     const deliveryOptions = {
-      standard: { label: "Standard delivery", fee: 0, eta: "5-7 business days" },
-      express: { label: "Express delivery", fee: 99, eta: "2-3 business days" },
+      standard: { label: "Standard delivery", fee: 100, eta: "5-7 business days" },
+      premium: { label: "Premium delivery", fee: 200, eta: "2-3 business days" },
     };
 
     const paymentLabels = {
