@@ -1,6 +1,6 @@
 # Robotechzone
 
-Robotechzone is a lightweight product showcase for the Bunty lineup. It presents the Bunty Desktop companian and keychain, Bunty Desktop companian and keychain Classic, Bunty Desktop Bot products, and the Shadow Lamp collection, highlights the main features, and lets visitors start an order through WhatsApp.
+Robotechzone is a lightweight product showcase for the Bunty lineup. It presents the Bunty Desktop companian and keychain, Bunty keychain , Bunty Desktop Bot products, and the Shadow Lamp collection, highlights the main features, and lets visitors start an order through WhatsApp.
 
 ## Features
 
